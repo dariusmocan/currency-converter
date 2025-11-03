@@ -7,25 +7,35 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+// function used to show all currencies at the beginning if 's' is pressed
 void show_currencies(json currencyData) {
     double baseAmount = 1.0;
     std::string baseCurrency = "eur";
+    std::string baseCurrencyUpper = "EUR";
     std::cout << "\nConversion Table for euro\n";
     std::cout << "------------------------\n";
 
     for (auto& [currency, rate] : currencyData.items()) {
-        double converted = baseAmount * (rate / 1.0);
-        std::cout << baseAmount << ": " << baseCurrency << " = " << converted << " " << currency << '\n';
+        double rateVal = rate.get<double>();
+        std::string currencyUpper = currency;
+        // we want to display Currencie sin uppercase
+        std::transform(currencyUpper.begin(), currencyUpper.end(), currencyUpper.begin(), ::toupper);
+        // exclude very small insignificant currencies
+        if (rateVal > 0.1) {
+            double converted = baseAmount * rateVal;
+            std::cout << baseAmount << ": " << baseCurrencyUpper << " = " << converted << " " << currencyUpper << '\n';
+        }
     }
 }
 
 
 int main()
 {
-    std::string fromCurrency;
-    std::string toCurrency;
+    std::string fromCurrency; // currency to be exchanged
+    std::string toCurrency; // the currency  in which the old one is exchanged
     const char ESC = 27;
     char key = ' ';
+    // only show 2 digits after .
     std::cout << std::fixed << std::setprecision(2);
 
     // opening file 'currencies.json'
@@ -41,13 +51,18 @@ int main()
     file >> currencyData;
     file.close();
 
-    // show currencies on 's'
-    std::cout << "Press 's' to show the currencies exchanges from euro! Press any other key if not";
 
     do{
+        // show currencies on 's'
+        std::cout << "Press 's' to show the currencies exchanges from euro! Press any other key if not :\n";
+
         key = _getch();
         if (key == 's') {
             show_currencies(currencyData);
+        }
+        else if (key == ESC) {
+            std::cout << "\nPressed 'Esc' : Program exited";
+            return 1;
         }
 
 
@@ -72,19 +87,26 @@ int main()
             std::cin >> toCurrency;
         }
 
+        // get the currencies' exchange values
         double from = currencyData[fromCurrency];
         double to = currencyData[toCurrency];
         double amount;
 
 
         std::cout << "Introduce amount to change : ";
+        // verify the amount to be valid
         while (!(std::cin >> amount) || amount <= 0) {
             std::cout << "Introduce a valid amount : ";
+            // clear and ignore the buffer
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
         }
 
         double exchanged = amount * (to / from);
+
+        // display the currencies uppercase
+        std::transform(fromCurrency.begin(), fromCurrency.end(), fromCurrency.begin(), ::toupper);
+        std::transform(toCurrency.begin(), toCurrency.end(), toCurrency.begin(), ::toupper);
 
         std::cout << amount << " " << fromCurrency << " = " << exchanged << " " << toCurrency << '\n';
 
